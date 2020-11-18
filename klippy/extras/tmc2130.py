@@ -535,7 +535,7 @@ class TMC2130:
         cmdhelper = tmc.TMCCommandHelper(config, self.mcu_tmc)
         cmdhelper.setup_register_dump(ReadRegisters)
         # Setup basic register values
-        TMCCurrentHelper(config, self.mcu_tmc)
+        #TMCCurrentHelper(config, self.mcu_tmc) # for prusa
         mh = tmc.TMCMicrostepHelper(config, self.mcu_tmc)
         self.get_microsteps = mh.get_microsteps
         self.get_phase = mh.get_phase
