@@ -246,6 +246,9 @@ class TMCVirtualPinHelper:
             val = self.fields.set_field(self.diag_pin_field, 1)
         self.mcu_tmc.set_register("GCONF", val)
         self.mcu_tmc.set_register("TCOOLTHRS", 0xfffff)
+        if self.cur_helper is not None: # for prusa
+            self.rc, self.hc, home_c = self.cur_helper.get_current() # for prusa
+            self.cur_helper.set_current(home_c, home_c) # for prusa
     def handle_homing_move_end(self, endstops):
         if self.mcu_endstop not in endstops:
             return
