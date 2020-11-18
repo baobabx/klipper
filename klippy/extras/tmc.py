@@ -182,9 +182,13 @@ class TMCCommandHelper:
 
 # Helper class for "sensorless homing"
 class TMCVirtualPinHelper:
-    def __init__(self, config, mcu_tmc):
+    #def __init__(self, config, mcu_tmc):
+    def __init__(self, config, mcu_tmc), diag_pin, cur_helper=None: # for prusa
         self.printer = config.get_printer()
         self.mcu_tmc = mcu_tmc
+        self.cur_helper = cur_helper # for prusa
+        self.rc = self.hc = 0 # for prusa
+        self.diag_pin = diag_pin # for prusa
         self.fields = mcu_tmc.get_fields()
         if self.fields.lookup_register('diag0_stall') is not None:
             if config.get('diag0_pin', None) is not None:
@@ -232,10 +236,13 @@ class TMCVirtualPinHelper:
         reg = self.fields.lookup_register("en_pwm_mode", None)
         if reg is None:
             # On "stallguard4" drivers, "stealthchop" must be enabled
+            self.en_pwm = not self.fields.get_field("en_spreadCycle") # for prusa
+            self.pwmthrs = self.fields.get_field("TPWMTHRS") # for prusa
             self.mcu_tmc.set_register("TPWMTHRS", 0)
             val = self.fields.set_field("en_spreadCycle", 0)
         else:
             # On earlier drivers, "stealthchop" must be disabled
+            self.en_pwm = self.fields.get_field("en_pwm_mode") # for prusa
             self.fields.set_field("en_pwm_mode", 0)
             val = self.fields.set_field(self.diag_pin_field, 1)
         self.mcu_tmc.set_register("GCONF", val)
@@ -252,6 +259,8 @@ class TMCVirtualPinHelper:
             val = self.fields.set_field(self.diag_pin_field, 0)
         self.mcu_tmc.set_register("GCONF", val)
         self.mcu_tmc.set_register("TCOOLTHRS", 0)
+        if self.cur_helper is not None: # for prusa
+            self.cur_helper.set_current(self.rc, self.hc) # for prusa
 
 
 ######################################################################
@@ -283,13 +292,16 @@ class TMCMicrostepHelper:
 def TMCStealthchopHelper(config, mcu_tmc, tmc_freq):
     fields = mcu_tmc.get_fields()
     en_pwm_mode = False
-    velocity = config.getfloat('stealthchop_threshold', 0., minval=0.)
-    if velocity:
-        stepper_name = " ".join(config.get_name().split()[1:])
-        stepper_config = config.getsection(stepper_name)
-        step_dist = stepper_config.getfloat('step_distance')
-        step_dist_256 = step_dist / (1 << fields.get_field("MRES"))
-        threshold = int(tmc_freq * step_dist_256 / velocity + .5)
+    velocity = config.getfloat('stealthchop_threshold', None, minval=0.)
+    if velocity is not None: # for prusa
+        if velocity:
+            stepper_name = " ".join(config.get_name().split()[1:])
+            stepper_config = config.getsection(stepper_name)
+            step_dist = stepper_config.getfloat('step_distance')
+            step_dist_256 = step_dist / (1 << fields.get_field("MRES"))
+            threshold = int(tmc_freq * step_dist_256 / velocity + .5)
+        else: # for prusa
+            threshold = 0 # for prusa
         fields.set_field("TPWMTHRS", max(0, min(0xfffff, threshold)))
         en_pwm_mode = True
     reg = fields.lookup_register("en_pwm_mode", None)
