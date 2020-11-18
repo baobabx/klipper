@@ -183,7 +183,7 @@ class TMCCommandHelper:
 # Helper class for "sensorless homing"
 class TMCVirtualPinHelper:
     #def __init__(self, config, mcu_tmc):
-    def __init__(self, config, mcu_tmc), diag_pin, cur_helper=None: # for prusa
+    def __init__(self, config, mcu_tmc, diag_pin, cur_helper=None): # for prusa
         self.printer = config.get_printer()
         self.mcu_tmc = mcu_tmc
         self.cur_helper = cur_helper # for prusa
