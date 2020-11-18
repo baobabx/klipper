@@ -530,7 +530,7 @@ class TMC2130:
         self.get_current = cur_helper.get_current # for prusa
         self.set_current = cur_helper.set_current # for prusa
         # Allow virtual pins to be created
-        tmc.TMCVirtualPinHelper(config, self.mcu_tmc)
+        tmc.TMCVirtualPinHelper(config, self.mcu_tmc, cur_helper)
         # Register commands
         cmdhelper = tmc.TMCCommandHelper(config, self.mcu_tmc)
         cmdhelper.setup_register_dump(ReadRegisters)
